@@ -186,7 +186,7 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
             )}
           </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-5 px-5">
+          <div className="flex gap-3 overflow-x-auto pt-2 pb-2.5 scrollbar-none -mx-5 px-5">
             {categoriasMock.map((cat) => {
               const isSelected = selectedCategory === cat.id;
               return (

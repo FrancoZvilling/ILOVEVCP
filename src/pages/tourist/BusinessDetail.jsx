@@ -335,7 +335,7 @@ export default function BusinessDetail({
             </div>
 
             {/* Carrusel Horizontal Scrollable */}
-            <div className="flex gap-3 overflow-x-auto pb-3 -mx-5 px-5 scrollbar-none">
+            <div className="flex gap-3 overflow-x-auto pt-1.5 pb-3 -mx-5 px-5 scrollbar-none">
               {relatedBusinesses.map((item) => (
                 <div
                   key={item.id}

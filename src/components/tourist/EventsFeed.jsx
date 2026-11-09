@@ -55,7 +55,7 @@ export default function EventsFeed({ currentZone, onSelectEvent }) {
       </div>
 
       {/* 2. Filtros Rápidos por Categoría */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-5 px-5">
+      <div className="flex gap-2 overflow-x-auto pt-1.5 pb-2 scrollbar-none -mx-5 px-5">
         {categories.map((cat) => {
           const isActive = selectedCategory === cat.id;
           const Icon = cat.icon;

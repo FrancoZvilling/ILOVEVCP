@@ -14,7 +14,8 @@ import {
   Filter,
   Pizza,
   X,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import { googleMapsDarkGoldTheme } from '../../utils/googleMapsStyle';
 
@@ -42,6 +43,7 @@ export default function MapView({
   const [radiusKm, setRadiusKm] = useState(2.0); // 0.5 | 1.0 | 2.0 | 5.0
   const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' | 'gastronomia' | 'experiencias' | 'relax'
   const [selectedExploreBusiness, setSelectedExploreBusiness] = useState(null);
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
 
   // Helper para renderizar iconos temáticos según categoría
   const renderBusinessIcon = (iconType) => {
@@ -157,101 +159,129 @@ export default function MapView({
           </div>
         </div>
       ) : (
-        /* HEADER MODO EXPLORAR (Paso 2: Radar de Búsqueda y Filtros de Distancia) */
-        <div className="relative z-30 pt-3 px-4 animate-fadeIn space-y-2">
-          <div className="bg-[#0B0B0E]/90 backdrop-blur-xl border border-gold-border/40 rounded-3xl p-4 shadow-2xl space-y-3.5">
-            {/* Fila 1: Encabezado del Radar y Contador de Resultados */}
-            <div className="flex items-center justify-between">
+        /* HEADER MODO EXPLORAR (Radar Plegable / Desplegable con Flecha) */
+        <div className="relative z-30 pt-3 px-4 animate-fadeIn">
+          <div className="bg-[#0B0B0E]/90 backdrop-blur-xl border border-gold-border/40 rounded-3xl p-3.5 sm:p-4 shadow-2xl transition-all duration-300">
+            {/* Fila 1: Encabezado del Radar, Resumen Activo y Flecha Desplegable */}
+            <div 
+              className="flex items-center justify-between cursor-pointer select-none"
+              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            >
               <div className="flex items-center gap-2.5">
-                <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-[#D4AF37]/25 to-[#AA7C26]/20 border border-[#D4AF37]/50 flex items-center justify-center text-[#E5C07B] shadow-inner">
+                <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-[#D4AF37]/25 to-[#AA7C26]/20 border border-[#D4AF37]/50 flex items-center justify-center text-[#E5C07B] shadow-inner shrink-0">
                   <Navigation className="w-4 h-4 transform rotate-45" />
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0B0B0E] animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="font-serif text-base font-medium text-[#FAF6EE] tracking-wide">
+                  <h2 className="font-serif text-sm sm:text-base font-medium text-[#FAF6EE] tracking-wide leading-none">
                     Radar de Comercios
                   </h2>
-                  <p className="text-[10px] text-gray-400 flex items-center gap-1">
-                    <span>Villa Carlos Paz</span>
+                  {/* Resumen de filtros activos cuando está plegado */}
+                  <div className="text-[10px] text-gray-400 flex items-center gap-1.5 mt-1">
+                    <span className="text-[#E5C07B] font-semibold">
+                      {radiusKm < 1 ? `${radiusKm * 1000}m` : `${radiusKm}km`}
+                    </span>
                     <span>•</span>
-                    <span className="text-[#E5C07B]">GPS Activo</span>
-                  </p>
+                    <span className="capitalize">
+                      {selectedCategory === 'all' ? 'Todos' : selectedCategory === 'experiencias' ? 'Aventura' : selectedCategory}
+                    </span>
+                    <span>•</span>
+                    <span className="text-gray-300 font-medium">
+                      {filteredComercios.length} {filteredComercios.length === 1 ? 'local' : 'locales'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Contador dinámico de locales en radio */}
-              <div className="px-3 py-1 rounded-full bg-gradient-to-r from-[#F5D77F]/15 via-[#D4AF37]/20 to-[#AA7C26]/15 border border-[#D4AF37]/50 text-[#F5D77F] text-xs font-bold tracking-wide shadow-sm flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                <span>
-                  {filteredComercios.length} {filteredComercios.length === 1 ? 'local' : 'locales'}
-                </span>
+              {/* Botón Circular con Flecha (Desplegar / Plegar) */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFiltersExpanded(!isFiltersExpanded);
+                  }}
+                  className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
+                    isFiltersExpanded
+                      ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#F5D77F]'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:border-[#D4AF37]/40'
+                  }`}
+                  title={isFiltersExpanded ? "Plegar filtros para ver el mapa completo" : "Desplegar selector de distancia y filtros"}
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isFiltersExpanded ? 'rotate-180 text-[#F5D77F]' : ''}`} />
+                </button>
               </div>
             </div>
 
-            {/* Fila 2: Selector de Radio en km */}
-            <div className="space-y-1.5 pt-1 border-t border-white/5">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-gray-400 flex items-center gap-1">
-                  <Compass className="w-3.5 h-3.5 text-[#E5C07B]" />
-                  <span>Radio de búsqueda:</span>
-                </span>
-                <span className="text-[#F5D77F] font-bold">
-                  {radiusKm < 1 ? `${radiusKm * 1000} metros` : `${radiusKm} km a la redonda`}
-                </span>
-              </div>
+            {/* Contenido Desplegable: Selector de Radio y Categorías */}
+            {isFiltersExpanded && (
+              <div className="space-y-3 pt-3 mt-3 border-t border-white/5 animate-fadeIn">
+                {/* Fila 2: Selector de Radio en km */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-gray-400 flex items-center gap-1">
+                      <Compass className="w-3.5 h-3.5 text-[#E5C07B]" />
+                      <span>Radio de búsqueda:</span>
+                    </span>
+                    <span className="text-[#F5D77F] font-bold">
+                      {radiusKm < 1 ? `${radiusKm * 1000} metros` : `${radiusKm} km a la redonda`}
+                    </span>
+                  </div>
 
-              {/* Botones de Selección de Radio */}
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { label: '500 m', value: 0.5 },
-                  { label: '1 km', value: 1.0 },
-                  { label: '2 km', value: 2.0 },
-                  { label: '5 km', value: 5.0 },
-                ].map((item) => {
-                  const isActive = radiusKm === item.value;
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setRadiusKm(item.value)}
-                      className={`py-1.5 px-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer text-center ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#B8860B] text-[#0B0B0E] font-bold shadow-[0_2px_10px_rgba(212,175,55,0.35)] scale-[1.02]'
-                          : 'bg-[#141418] text-gray-400 border border-white/5 hover:text-white hover:border-[#D4AF37]/40 hover:bg-[#181820]'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                  {/* Botones de Selección de Radio */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { label: '500 m', value: 0.5 },
+                      { label: '1 km', value: 1.0 },
+                      { label: '2 km', value: 2.0 },
+                      { label: '5 km', value: 5.0 },
+                    ].map((item) => {
+                      const isActive = radiusKm === item.value;
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setRadiusKm(item.value)}
+                          className={`py-1.5 px-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer text-center ${
+                            isActive
+                              ? 'bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#B8860B] text-[#0B0B0E] font-bold shadow-[0_2px_10px_rgba(212,175,55,0.35)] scale-[1.02]'
+                              : 'bg-[#141418] text-gray-400 border border-white/5 hover:text-white hover:border-[#D4AF37]/40 hover:bg-[#181820]'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-            {/* Fila 3: Filtro Rápido de Categorías */}
-            <div className="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
-              {[
-                { id: 'all', label: 'Todos' },
-                { id: 'gastronomia', label: 'Gastronomía' },
-                { id: 'experiencias', label: 'Aventura' },
-                { id: 'relax', label: 'Relax & Spa' },
-              ].map((cat) => {
-                const isActive = selectedCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1 rounded-full text-[11px] whitespace-nowrap transition-all cursor-pointer text-center ${
-                      isActive
-                        ? 'bg-[#D4AF37]/25 border border-[#D4AF37] text-[#F5D77F] font-bold shadow-sm'
-                        : 'bg-white/5 border border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                );
-              })}
-            </div>
+                {/* Fila 3: Filtro Rápido de Categorías */}
+                <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-wrap">
+                  {[
+                    { id: 'all', label: 'Todos' },
+                    { id: 'gastronomia', label: 'Gastronomía' },
+                    { id: 'experiencias', label: 'Aventura' },
+                    { id: 'relax', label: 'Relax & Spa' },
+                  ].map((cat) => {
+                    const isActive = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`px-3 py-1 rounded-full text-[11px] whitespace-nowrap transition-all cursor-pointer text-center ${
+                          isActive
+                            ? 'bg-[#D4AF37]/25 border border-[#D4AF37] text-[#F5D77F] font-bold shadow-sm'
+                            : 'bg-white/5 border border-white/10 text-gray-400 hover:text-gray-200 hover:border-white/20'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
