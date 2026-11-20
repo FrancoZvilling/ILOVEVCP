@@ -18,6 +18,7 @@ export default function CouponsView({
 }) {
   const [activeTab, setActiveTab] = useState('explorar'); // 'explorar' | 'guardados' | 'historial'
 
+  const activeCoupons = coupons.filter((c) => c.activa !== false);
   const savedCoupons = coupons.filter((c) => c.guardado);
 
   // Generamos la lista plana de todos los canjes históricos
@@ -53,7 +54,7 @@ export default function CouponsView({
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          Explorar ({coupons.length})
+          Explorar ({activeCoupons.length})
         </button>
 
         <button
@@ -86,7 +87,7 @@ export default function CouponsView({
       {/* PESTAÑA A: EXPLORAR (Catálogo Completo de la Ciudad) */}
       {activeTab === 'explorar' && (
         <div className="space-y-3.5">
-          {coupons.map((coupon) => (
+          {activeCoupons.map((coupon) => (
             <div
               key={coupon.id}
               className="bg-[#141418] border border-white/5 hover:border-gold-border rounded-2xl overflow-hidden transition-all duration-200 group"

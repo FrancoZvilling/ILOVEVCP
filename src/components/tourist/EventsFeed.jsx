@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { eventosMock } from '../../data/mocks/eventos';
 
-export default function EventsFeed({ currentZone, onSelectEvent }) {
+export default function EventsFeed({ currentZone, allEvents = eventosMock, onSelectEvent }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
@@ -25,9 +25,11 @@ export default function EventsFeed({ currentZone, onSelectEvent }) {
     { id: 'gastronomia', label: 'Ferias', icon: Utensils },
   ];
 
+  const activeEvents = allEvents.filter((e) => e.activo !== false);
+
   const filteredEvents = selectedCategory === 'all'
-    ? eventosMock
-    : eventosMock.filter((e) => e.categoria === selectedCategory);
+    ? activeEvents
+    : activeEvents.filter((e) => e.categoria === selectedCategory);
 
   // Evento destacado para el Hero
   const featuredEvent = filteredEvents.find((e) => e.esDestacado) || filteredEvents[0];

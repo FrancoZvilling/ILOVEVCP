@@ -71,6 +71,7 @@ export default function MapView({
   // Filtrado de comercios según radio de distancia y categoría
   const comerciosList = allComercios.length > 0 ? allComercios : [];
   const filteredComercios = comerciosList.filter((c) => {
+    if (c.estado === 'pausado') return false;
     const matchesDistance = (c.distanciaKm || 0) <= radiusKm;
     const matchesCategory = selectedCategory === 'all' || c.categoriaId === selectedCategory;
     return matchesDistance && matchesCategory;
@@ -130,11 +131,13 @@ export default function MapView({
                 <span>Ver todos</span>
               </button>
 
-              {/* Badge Dorado PREMIUM con Laureles */}
-              <div className="px-3 py-1 rounded-full bg-gradient-to-r from-[#F5D77F]/20 via-[#D4AF37]/25 to-[#AA7C26]/20 border border-[#D4AF37]/60 text-[#F5D77F] text-[10px] font-bold tracking-widest uppercase flex items-center gap-1 shadow-sm">
-                <span className="text-xs">🌿</span>
-                <span>PREMIUM</span>
-              </div>
+              {/* Badge Dorado DESTACADO con Laureles */}
+              {business.esPremium !== false && (
+                <div className="px-3 py-1 rounded-full bg-gradient-to-r from-[#F5D77F]/20 via-[#D4AF37]/25 to-[#AA7C26]/20 border border-[#D4AF37]/60 text-[#F5D77F] text-[10px] font-bold tracking-widest uppercase flex items-center gap-1 shadow-sm">
+                  <span className="text-xs">🌿</span>
+                  <span>DESTACADO</span>
+                </div>
+              )}
             </div>
 
             {/* Título en Tipografía Serif de Alta Gama */}

@@ -163,7 +163,7 @@ export default function SavedBusinessesView({
                     />
                     {comercio.esPremium && (
                       <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[8px] font-bold text-[#F5D77F] border border-gold-500/30">
-                        ★ PREMIUM
+                        ★ DESTACADO
                       </div>
                     )}
                   </div>

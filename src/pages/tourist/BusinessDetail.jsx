@@ -113,7 +113,7 @@ export default function BusinessDetail({
 
       {/* 2. Cuerpo de la Ficha */}
       <div className="px-5 pt-3 space-y-5">
-        {/* Título y Badge Premium */}
+        {/* Título y Badge Destacado */}
         <div>
           <div className="flex items-center justify-between gap-2">
             <h1 className="font-serif text-2xl font-bold text-white tracking-wide leading-tight">
@@ -121,7 +121,7 @@ export default function BusinessDetail({
             </h1>
             {comercio.esPremium && (
               <span className="shrink-0 text-[10px] font-bold text-[#E5C07B] bg-[#D4AF37]/15 border border-[#D4AF37]/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                ★ premium
+                ★ Destacado
               </span>
             )}
           </div>
@@ -208,41 +208,43 @@ export default function BusinessDetail({
           </div>
         </section>
 
-        {/* 5. Tarjeta Destacada de Cupón QR */}
-        <section className="pt-2">
-          <div 
-            onClick={() => onOpenCoupon && onOpenCoupon(comercio.promocionPrincipal)}
-            className="relative rounded-2xl p-4 overflow-hidden border border-dashed border-[#D4AF37] bg-gradient-to-r from-[#211B10] via-[#1A1710] to-[#141418] shadow-gold-glow/20 cursor-pointer hover:border-[#F5D77F] transition-all duration-200"
-          >
-            <div className="flex items-center justify-between gap-3">
-              {/* Información del Beneficio */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#E5C07B]">
-                    <Tag className="w-4 h-4" />
+        {/* 5. Tarjeta Destacada de Cupón QR (Solo si el comercio tiene promoción activa) */}
+        {comercio.promocionPrincipal && (
+          <section className="pt-2">
+            <div 
+              onClick={() => onOpenCoupon && onOpenCoupon(comercio.promocionPrincipal)}
+              className="relative rounded-2xl p-4 overflow-hidden border border-dashed border-[#D4AF37] bg-gradient-to-r from-[#211B10] via-[#1A1710] to-[#141418] shadow-gold-glow/20 cursor-pointer hover:border-[#F5D77F] transition-all duration-200"
+            >
+              <div className="flex items-center justify-between gap-3">
+                {/* Información del Beneficio */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#E5C07B]">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-base font-bold text-white tracking-wide">
+                      {comercio.promocionPrincipal.titulo}
+                    </h3>
                   </div>
-                  <h3 className="text-base font-bold text-white tracking-wide">
-                    {comercio.promocionPrincipal?.titulo || 'Cupón 20% OFF'}
-                  </h3>
+                  <p className="text-xs text-gray-300 pt-1">
+                    {comercio.promocionPrincipal.validez}
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    {comercio.promocionPrincipal.condicion}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-300 pt-1">
-                  {comercio.promocionPrincipal?.validez}
-                </p>
-                <p className="text-[11px] text-gray-400">
-                  {comercio.promocionPrincipal?.condicion}
-                </p>
-              </div>
 
-              {/* Botón Cuadrado QR Dorado (Invita a abrir el cupón completo) */}
-              <div className="shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F5D77F] via-[#D4AF37] to-[#AA7C26] p-2 flex flex-col items-center justify-center text-[#0B0B0E] shadow-[0_4px_16px_rgba(212,175,55,0.35)] group-hover:scale-105 transition-all duration-200">
-                <QrCode className="w-8 h-8 stroke-[2.2] text-[#0B0B0E]" />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#0B0B0E] mt-1">
-                  Ver QR
-                </span>
+                {/* Botón Cuadrado QR Dorado (Invita a abrir el cupón completo) */}
+                <div className="shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F5D77F] via-[#D4AF37] to-[#AA7C26] p-2 flex flex-col items-center justify-center text-[#0B0B0E] shadow-[0_4px_16px_rgba(212,175,55,0.35)] group-hover:scale-105 transition-all duration-200">
+                  <QrCode className="w-8 h-8 stroke-[2.2] text-[#0B0B0E]" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#0B0B0E] mt-1">
+                    Ver QR
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* 6. Muro de Reseñas */}
         <section className="pt-2 space-y-3">
@@ -353,9 +355,11 @@ export default function BusinessDetail({
                       alt={item.nombre}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-black text-[#F5D77F] border border-gold-500/30">
-                      {item.promocionPrincipal?.descuento || 'PROMO'}
-                    </div>
+                    {item.promocionPrincipal?.descuento && (
+                      <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-black text-[#F5D77F] border border-gold-500/30">
+                        {item.promocionPrincipal.descuento}
+                      </div>
+                    )}
                     {item.esPremium && (
                       <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-[#D4AF37] text-[8px] font-black text-black">
                         ★
@@ -376,8 +380,14 @@ export default function BusinessDetail({
                   {/* Beneficio y Distancia */}
                   <div className="pt-1.5 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-300">
                     <div className="flex items-center gap-1 text-[#E5C07B] font-semibold truncate pr-2">
-                      <Tag className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{item.promocionPrincipal?.titulo}</span>
+                      {item.promocionPrincipal?.titulo ? (
+                        <>
+                          <Tag className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{item.promocionPrincipal.titulo}</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400 font-normal">Ver ficha</span>
+                      )}
                     </div>
 
                     <div className="shrink-0 flex items-center gap-1 text-gray-400">
@@ -393,7 +403,7 @@ export default function BusinessDetail({
 
         {/* Footer de Marca */}
         <div className="text-center text-[10px] text-gray-400 pt-4 pb-2 tracking-wide">
-          {comercio.nombre} • I LOVE {comercio.localidadId === 'carlos-paz' ? 'CARLOS PAZ' : 'ZONA'} • Premium
+          {comercio.nombre} • I LOVE {comercio.localidadId === 'carlos-paz' ? 'CARLOS PAZ' : 'ZONA'} • {comercio.esPremium ? 'Comercio Destacado' : 'Comercio Adherido'}
         </div>
       </div>
     </div>

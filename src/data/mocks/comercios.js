@@ -120,3 +120,70 @@ export const comerciosMock = [
     }
   }
 ];
+
+export const comerciosPendientesMock = [
+  {
+    id: "pending-don-alberto",
+    nombre: "Parrilla Don Alberto",
+    eslogan: "Asador Criollo & Empanadas Salteñas",
+    localidadId: "carlos-paz",
+    localidadNombre: "Carlos Paz",
+    isNewLocalitySuggested: false,
+    suggestedLocalityData: null,
+    categoriaId: "gastronomia",
+    categoriaNombre: "Gastronomía",
+    isNewCategorySuggested: false,
+    direccion: "Av. Cárcano 420, Villa Carlos Paz",
+    horario: "Mar a Dom • 12:00 a 00:00 hs",
+    whatsapp: "+5493541445566",
+    descripcion: "Parrilla tradicional serrana con cortes a la estaca, patio cervecero y sector familiar.",
+    mapsLink: "https://maps.app.goo.gl/UHajQQTkEBCoQBGz8",
+    coordenadas: { lat: -31.4290, lng: -64.5020 },
+    fotos: [
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80"
+    ],
+    promocionPrincipal: null,
+    estado: "pendiente",
+    esPremium: false,
+    rating: 5.0,
+    reviewsCount: 0,
+    distancia: "650 m • 8 min caminando",
+    distanciaKm: 0.65,
+    fechaSolicitud: "Hoy - 10:15 hs"
+  },
+  {
+    id: "pending-costa-sur",
+    nombre: "Boutique Costa Sur",
+    eslogan: "Indumentaria Urbana & Accesorios de Playa",
+    localidadId: "custom-loc-mdp",
+    localidadNombre: "Mar del Plata, Buenos Aires",
+    isNewLocalitySuggested: true,
+    suggestedLocalityData: {
+      nombre: "Mar del Plata",
+      provincia: "Buenos Aires",
+      lat: -38.0055,
+      lng: -57.5426
+    },
+    categoriaId: "other",
+    categoriaNombre: "Indumentaria y Diseño",
+    isNewCategorySuggested: true,
+    direccion: "Calle Güemes 2840, Mar del Plata",
+    horario: "Lun a Sáb • 10:00 a 21:00 hs",
+    whatsapp: "+5492235112233",
+    descripcion: "Local multimarca en el centro comercial Güemes con colecciones de temporada.",
+    mapsLink: "https://maps.app.goo.gl/UHajQQTkEBCoQBGz8",
+    coordenadas: { lat: -38.0085, lng: -57.5410 },
+    fotos: [
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80"
+    ],
+    promocionPrincipal: null,
+    estado: "pendiente",
+    esPremium: false,
+    rating: 5.0,
+    reviewsCount: 0,
+    distancia: "Ubicado en zona",
+    distanciaKm: 0.5,
+    fechaSolicitud: "Ayer - 18:40 hs"
+  }
+];

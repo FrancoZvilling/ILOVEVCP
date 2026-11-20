@@ -12,15 +12,24 @@ import ActiveCouponModal from './components/common/ActiveCouponModal';
 import SecurityModal from './components/common/SecurityModal';
 import TermsModal from './components/common/TermsModal';
 import EventDetailModal from './components/common/EventDetailModal';
+import BusinessRegisterView from './pages/merchant/BusinessRegisterView';
+import MerchantDashboard from './pages/merchant/MerchantDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import BottomNav from './components/layout/BottomNav';
+import MerchantBottomNav from './components/layout/MerchantBottomNav';
+import AdminBottomNav from './components/layout/AdminBottomNav';
 import { localidadesMock } from './data/mocks/localidades';
-import { comerciosMock } from './data/mocks/comercios';
+import { comerciosMock, comerciosPendientesMock } from './data/mocks/comercios';
 import { promocionesCatalogoMock } from './data/mocks/cupones';
 import { eventosMock } from './data/mocks/eventos';
 
 export default function App() {
+  const [currentRole, setCurrentRole] = useState('tourist'); // 'tourist' | 'merchant' | 'admin'
+  const [merchantTab, setMerchantTab] = useState('scanner'); // 'scanner' | 'metrics' | 'business'
+  const [adminTab, setAdminTab] = useState('metrics'); // 'metrics' | 'moderation' | 'businesses' | 'localities' | 'events'
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [localities, setLocalities] = useState(localidadesMock);
   const [activeZone, setActiveZone] = useState(localidadesMock[0]); // Carlos Paz
   const [showZoneSelector, setShowZoneSelector] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -31,16 +40,20 @@ export default function App() {
   const [savedEventIds, setSavedEventIds] = useState(['festival-lago-2026']);
   const [showSavedBusinesses, setShowSavedBusinesses] = useState(false);
 
-  // Estado dinámico interactivo para Cupones y Canjes
+  // Estado dinámico para Comercios Activos y Cupones
+  const [businesses, setBusinesses] = useState(comerciosMock);
   const [coupons, setCoupons] = useState(promocionesCatalogoMock);
   const [activeCoupon, setActiveCoupon] = useState(null);
 
   // Estado dinámico para Eventos Culturales
+  const [events, setEvents] = useState(eventosMock);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // Estados de Modales de Perfil
+  // Estados de Modales de Perfil y Flujo Comerciante/Admin
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showBusinessRegister, setShowBusinessRegister] = useState(false);
+  const [pendingBusinesses, setPendingBusinesses] = useState(comerciosPendientesMock);
   const [userProfile, setUserProfile] = useState({
     nombre: 'Juan Pérez',
     email: 'juan.perez@correo.com',
@@ -55,7 +68,7 @@ export default function App() {
     if (mainContainerRef.current) {
       mainContainerRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
-  }, [activeTab, showSavedBusinesses, selectedBusiness, showZoneSelector, showAuth, showOnboarding]);
+  }, [activeTab, showSavedBusinesses, selectedBusiness, showZoneSelector, showAuth, showOnboarding, showBusinessRegister, currentRole, merchantTab, adminTab]);
 
   const handleToggleSaveBusiness = (businessId) => {
     setSavedBusinessIds((prev) =>
@@ -165,7 +178,9 @@ export default function App() {
             historialCanjes: newHistory,
             guardado: true // Al canjearlo, queda guardado en su billetera
           };
-          setActiveCoupon(updated);
+          if (activeCoupon && activeCoupon.id === couponId) {
+            setActiveCoupon(updated);
+          }
           return updated;
         }
         return c;
@@ -173,22 +188,172 @@ export default function App() {
     );
   };
 
+  // Gestor de Promociones del Comercio: Activar / Pausar
+  const handleToggleCouponActive = (couponId) => {
+    setCoupons((prev) =>
+      prev.map((c) => (c.id === couponId ? { ...c, activa: !(c.activa !== false) } : c))
+    );
+  };
+
+  // Gestor de Promociones del Comercio: Crear nueva promo QR
+  const handleCreateCoupon = (newCoupon) => {
+    setCoupons((prev) => [newCoupon, ...prev]);
+  };
+
+  // Edición rápida de datos del comercio (horarios, WhatsApp, eslogan)
+  const handleUpdateBusiness = (businessId, updatedFields) => {
+    setBusinesses((prev) =>
+      prev.map((b) => (b.id === businessId ? { ...b, ...updatedFields } : b))
+    );
+    if (selectedBusiness && selectedBusiness.id === businessId) {
+      setSelectedBusiness((prev) => ({ ...prev, ...updatedFields }));
+    }
+  };
+
+  // Moderación del Admin: Aprobar solicitud de comercio pendiente
+  const handleApprovePendingBusiness = (pendingBiz, cfg = {}) => {
+    let finalLocalidadId = pendingBiz.localidadId;
+
+    // Si sugirió una nueva localidad (ej. Mar del Plata) y el Admin activó la casilla
+    if (pendingBiz.isNewLocalitySuggested && pendingBiz.suggestedLocalityData && cfg.activateNewLocality !== false) {
+      const slugId = pendingBiz.suggestedLocalityData.nombre
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      finalLocalidadId = slugId;
+
+      setLocalities((prev) => {
+        if (prev.some((l) => l.id === slugId)) return prev;
+        return [
+          ...prev,
+          {
+            id: slugId,
+            nombre: pendingBiz.suggestedLocalityData.nombre,
+            subtitulo: pendingBiz.suggestedLocalityData.provincia || 'Argentina',
+            provincia: pendingBiz.suggestedLocalityData.provincia || 'Argentina',
+            distanciaKm: 350,
+            latCentro: pendingBiz.suggestedLocalityData.lat || -38.0055,
+            lngCentro: pendingBiz.suggestedLocalityData.lng || -57.5426,
+            radioKm: 15,
+            activa: true
+          }
+        ];
+      });
+    }
+
+    const approvedBiz = {
+      ...pendingBiz,
+      localidadId: finalLocalidadId,
+      categoriaId:
+        pendingBiz.isNewCategorySuggested || pendingBiz.categoriaId === 'other'
+          ? cfg.assignedCategoryId || 'experiencias'
+          : pendingBiz.categoriaId,
+      esPremium: Boolean(cfg.markAsPremium),
+      estado: 'aprobado'
+    };
+
+    setBusinesses((prev) => [approvedBiz, ...prev]);
+    setPendingBusinesses((prev) => prev.filter((item) => item.id !== pendingBiz.id));
+  };
+
+  // Moderación del Admin: Rechazar solicitud de comercio pendiente
+  const handleRejectPendingBusiness = (pendingId) => {
+    setPendingBusinesses((prev) => prev.filter((item) => item.id !== pendingId));
+  };
+
+  // Gestión del Admin: Activar o quitar estatus de "★ Comercio Destacado"
+  const handleToggleFeaturedBusiness = (businessId) => {
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.id === businessId ? { ...b, esPremium: !b.esPremium } : b
+      )
+    );
+    if (selectedBusiness && selectedBusiness.id === businessId) {
+      setSelectedBusiness((prev) => ({ ...prev, esPremium: !prev.esPremium }));
+    }
+  };
+
+  // Gestión del Admin: Pausar o reactivar visibilidad de un comercio en la Guía
+  const handleTogglePauseBusiness = (businessId) => {
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.id === businessId
+          ? { ...b, estado: b.estado === 'pausado' ? 'aprobado' : 'pausado' }
+          : b
+      )
+    );
+  };
+
+  // Gestión del Admin: Localidades Multitenant
+  const handleToggleLocalityActive = (locId) => {
+    setLocalities((prev) =>
+      prev.map((l) =>
+        l.id === locId ? { ...l, activa: l.activa === false ? true : false } : l
+      )
+    );
+  };
+
+  const handleCreateLocality = (newLoc) => {
+    setLocalities((prev) => {
+      if (prev.some((l) => l.id === newLoc.id)) return prev;
+      return [...prev, newLoc];
+    });
+  };
+
+  const handleUpdateLocality = (locId, updatedFields) => {
+    setLocalities((prev) =>
+      prev.map((l) => (l.id === locId ? { ...l, ...updatedFields } : l))
+    );
+    if (activeZone && activeZone.id === locId) {
+      setActiveZone((prev) => ({ ...prev, ...updatedFields }));
+    }
+  };
+
+  // Gestión del Admin: Cartelera de Eventos Municipales y Culturales
+  const handleCreateEvent = (newEvt) => {
+    setEvents((prev) => [newEvt, ...prev]);
+  };
+
+  const handleToggleEventFeatured = (evtId) => {
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === evtId ? { ...e, esDestacado: !e.esDestacado } : e
+      )
+    );
+  };
+
+  const handleToggleEventActive = (evtId) => {
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === evtId
+          ? { ...e, activo: e.activo === false ? true : false }
+          : e
+      )
+    );
+  };
+
+  const handleDeleteEvent = (evtId) => {
+    setEvents((prev) => prev.filter((e) => e.id !== evtId));
+  };
+
   return (
     <div className="min-h-screen bg-[#070709] flex flex-col items-center justify-center sm:py-6 sm:px-4">
       
       {/* Selector de Pantallas Rápido para Demostración al Cliente */}
-      <div className="hidden sm:flex items-center gap-1.5 mb-3 bg-[#141418] border border-white/10 px-3 py-1.5 rounded-full text-[11px] text-gray-400 select-none shadow-md">
+      <div className="hidden sm:flex items-center gap-1.5 mb-3 bg-[#141418] border border-white/10 px-3 py-1.5 rounded-full text-[11px] text-gray-400 select-none shadow-md flex-wrap justify-center">
         <span className="text-[#E5C07B] font-bold mr-1">Demo Flujo:</span>
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(true);
             setShowAuth(false);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            showOnboarding ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && showOnboarding ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           0. Onboarding
@@ -196,13 +361,15 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(true);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && showAuth ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && showAuth ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           1. Login
@@ -210,13 +377,15 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(true);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && showZoneSelector ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && showZoneSelector ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           2. Zona
@@ -224,14 +393,16 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
             setActiveTab('home');
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && !showAuth && !showZoneSelector && !selectedBusiness && activeTab === 'home'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && !showAuth && !showZoneSelector && !selectedBusiness && activeTab === 'home'
               ? 'bg-[#D4AF37] text-black font-bold'
               : 'hover:text-white'
           }`}
@@ -241,14 +412,16 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(false);
-            setSelectedBusiness(comerciosMock[0]);
+            setShowBusinessRegister(false);
+            setSelectedBusiness(businesses[0]);
             setActiveTab('home');
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && selectedBusiness && activeTab === 'home' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && selectedBusiness && activeTab === 'home' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           4. Ficha
@@ -256,14 +429,16 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
             setActiveTab('map');
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && activeTab === 'map' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && activeTab === 'map' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           5. Mapa
@@ -271,14 +446,16 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
             setActiveTab('coupons');
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && activeTab === 'coupons' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && activeTab === 'coupons' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           6. Cupones QR
@@ -286,18 +463,53 @@ export default function App() {
         <button
           type="button"
           onClick={() => {
+            setCurrentRole('tourist');
             setShowOnboarding(false);
             setShowAuth(false);
             setShowZoneSelector(false);
+            setShowBusinessRegister(false);
             setSelectedBusiness(null);
             setShowSavedBusinesses(false);
             setActiveTab('profile');
           }}
           className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
-            !showOnboarding && activeTab === 'profile' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
+            currentRole === 'tourist' && !showOnboarding && !showBusinessRegister && activeTab === 'profile' ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white'
           }`}
         >
           7. Perfil
+        </button>
+        <div className="w-[1px] h-3.5 bg-white/15 mx-0.5" />
+        <button
+          type="button"
+          onClick={() => {
+            setShowOnboarding(false);
+            setShowAuth(false);
+            setShowZoneSelector(false);
+            setShowBusinessRegister(false);
+            setCurrentRole('merchant');
+            setMerchantTab('scanner');
+          }}
+          className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+            currentRole === 'merchant' && !showBusinessRegister ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white text-[#E5C07B]'
+          }`}
+        >
+          🏪 Comercio
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowOnboarding(false);
+            setShowAuth(false);
+            setShowZoneSelector(false);
+            setShowBusinessRegister(false);
+            setCurrentRole('admin');
+            setAdminTab('metrics');
+          }}
+          className={`px-2.5 py-0.5 rounded-full transition-colors cursor-pointer ${
+            currentRole === 'admin' && !showBusinessRegister ? 'bg-[#D4AF37] text-black font-bold' : 'hover:text-white text-[#F5D77F]'
+          }`}
+        >
+          🛡️ Admin
         </button>
       </div>
 
@@ -324,7 +536,48 @@ export default function App() {
           ) : showZoneSelector ? (
             <ZoneSelector 
               initialZone={activeZone.id} 
+              localities={localities}
               onSelectZone={handleZoneSelect} 
+            />
+          ) : showBusinessRegister ? (
+            <BusinessRegisterView
+              onBack={() => setShowBusinessRegister(false)}
+              onCompleteRegistration={(newBiz) => setPendingBusinesses((prev) => [newBiz, ...prev])}
+            />
+          ) : currentRole === 'merchant' ? (
+            <MerchantDashboard
+              merchantBusiness={businesses[0]}
+              activeTab={merchantTab}
+              onTabChange={setMerchantTab}
+              onSwitchToTourist={() => setCurrentRole('tourist')}
+              coupons={coupons}
+              onValidateCoupon={handleSimulateRedeem}
+              onToggleCouponActive={handleToggleCouponActive}
+              onCreateCoupon={handleCreateCoupon}
+              onUpdateBusiness={handleUpdateBusiness}
+            />
+          ) : currentRole === 'admin' ? (
+            <AdminDashboard
+              activeTab={adminTab}
+              onTabChange={setAdminTab}
+              onSwitchRole={(role) => setCurrentRole(role)}
+              businesses={businesses}
+              pendingBusinesses={pendingBusinesses}
+              coupons={coupons}
+              localities={localities}
+              events={events}
+              onApproveBusiness={handleApprovePendingBusiness}
+              onRejectBusiness={handleRejectPendingBusiness}
+              onToggleFeaturedBusiness={handleToggleFeaturedBusiness}
+              onTogglePauseBusiness={handleTogglePauseBusiness}
+              onUpdateBusiness={handleUpdateBusiness}
+              onToggleLocalityActive={handleToggleLocalityActive}
+              onCreateLocality={handleCreateLocality}
+              onUpdateLocality={handleUpdateLocality}
+              onCreateEvent={handleCreateEvent}
+              onToggleEventFeatured={handleToggleEventFeatured}
+              onToggleEventActive={handleToggleEventActive}
+              onDeleteEvent={handleDeleteEvent}
             />
           ) : selectedBusiness && activeTab === 'home' ? (
             <BusinessDetail
@@ -334,7 +587,7 @@ export default function App() {
               onBack={handleBackFromDetail}
               onNavigateToMap={handleNavigateToMap}
               onOpenCoupon={handleOpenCoupon}
-              allComercios={comerciosMock}
+              allComercios={businesses}
               onSelectRelatedBusiness={(b) => setSelectedBusiness(b)}
             />
           ) : (
@@ -342,6 +595,8 @@ export default function App() {
               {activeTab === 'home' && (
                 <Home
                   currentZone={activeZone}
+                  allComercios={businesses}
+                  allEvents={events}
                   onOpenZoneSelector={() => setShowZoneSelector(true)}
                   onSelectBusiness={handleSelectBusiness}
                   onSelectEvent={(evento) => setSelectedEvent(evento)}
@@ -352,7 +607,7 @@ export default function App() {
                 <MapView
                   comercio={selectedBusiness}
                   initialMode={selectedBusiness ? 'route' : 'explore'}
-                  allComercios={comerciosMock}
+                  allComercios={businesses}
                   onBack={handleBackFromMap}
                   onOpenBusinessDetail={(b) => {
                     setSelectedBusiness(b);
@@ -372,8 +627,8 @@ export default function App() {
               {activeTab === 'profile' && (
                 showSavedBusinesses ? (
                   <SavedBusinessesView
-                    savedBusinesses={comerciosMock.filter((c) => savedBusinessIds.includes(c.id))}
-                    savedEvents={eventosMock.filter((e) => savedEventIds.includes(e.id))}
+                    savedBusinesses={businesses.filter((c) => savedBusinessIds.includes(c.id))}
+                    savedEvents={events.filter((e) => savedEventIds.includes(e.id))}
                     onBack={() => setShowSavedBusinesses(false)}
                     onSelectBusiness={(comercio) => {
                       setShowSavedBusinesses(false);
@@ -410,9 +665,19 @@ export default function App() {
                     onOpenSavedBusinesses={() => setShowSavedBusinesses(true)}
                     onOpenSecurity={() => setShowSecurityModal(true)}
                     onOpenTerms={() => setShowTermsModal(true)}
-                    onRegisterBusiness={() => alert('Abriendo Formulario de Alta de Comercio (Módulo 4)...')}
-                    currentRole="tourist"
-                    onRoleChange={(role) => alert(`Cambiando a rol: ${role}`)}
+                    onRegisterBusiness={() => setShowBusinessRegister(true)}
+                    currentRole={currentRole}
+                    onRoleChange={(role) => {
+                      if (role === 'merchant') {
+                        setCurrentRole('merchant');
+                        setMerchantTab('scanner');
+                      } else if (role === 'admin') {
+                        setCurrentRole('admin');
+                        setAdminTab('metrics');
+                      } else {
+                        setCurrentRole('tourist');
+                      }
+                    }}
                     onLogout={() => setShowAuth(true)}
                   />
                 )
@@ -459,17 +724,30 @@ export default function App() {
           />
         )}
 
-        {/* Barra Inferior de Navegación (visible en vistas principales) */}
-        {!showOnboarding && !showAuth && !showZoneSelector && (
-          <BottomNav 
-            activeTab={activeTab} 
-            onTabChange={(tab) => {
-              setActiveTab(tab);
-              if (tab !== 'home') {
-                setSelectedBusiness(null);
-              }
-            }} 
-          />
+        {/* Barra Inferior de Navegación (Turista vs Comercio vs Admin) */}
+        {!showOnboarding && !showAuth && !showZoneSelector && !showBusinessRegister && (
+          currentRole === 'admin' ? (
+            <AdminBottomNav
+              activeTab={adminTab}
+              onTabChange={setAdminTab}
+              pendingCount={pendingBusinesses.length}
+            />
+          ) : currentRole === 'merchant' ? (
+            <MerchantBottomNav
+              activeTab={merchantTab}
+              onTabChange={setMerchantTab}
+            />
+          ) : (
+            <BottomNav 
+              activeTab={activeTab} 
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                if (tab !== 'home') {
+                  setSelectedBusiness(null);
+                }
+              }} 
+            />
+          )
         )}
       </div>
     </div>

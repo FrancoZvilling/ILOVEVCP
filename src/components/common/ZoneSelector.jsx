@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { MapPin, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { localidadesMock } from '../../data/mocks/localidades';
 
-export default function ZoneSelector({ onSelectZone, initialZone = 'carlos-paz' }) {
+export default function ZoneSelector({ onSelectZone, initialZone = 'carlos-paz', localities = localidadesMock }) {
   const [selectedZoneId, setSelectedZoneId] = useState(initialZone);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const selectedZone = localidadesMock.find((loc) => loc.id === selectedZoneId) || localidadesMock[0];
+  const activeZones = localities.filter((loc) => loc.activa !== false);
+  const selectedZone = activeZones.find((loc) => loc.id === selectedZoneId) || activeZones[0] || localidadesMock[0];
 
   const handleConfirm = () => {
     if (onSelectZone) {
@@ -29,7 +30,7 @@ export default function ZoneSelector({ onSelectZone, initialZone = 'carlos-paz' 
             I LOVE
           </h1>
           <span className="text-xs tracking-wide text-[#C9A66B]/90 font-medium lowercase">
-            selector de zona premium
+            selector de localidad
           </span>
         </header>
 
@@ -56,7 +57,7 @@ export default function ZoneSelector({ onSelectZone, initialZone = 'carlos-paz' 
 
         {/* Lista de Zonas Disponibles */}
         <div className="space-y-3">
-          {localidadesMock.map((zona) => {
+          {activeZones.map((zona) => {
             const isSelected = zona.id === selectedZoneId;
             return (
               <button

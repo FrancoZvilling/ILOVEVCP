@@ -20,10 +20,12 @@ import { comerciosMock } from '../../data/mocks/comercios';
 import { eventosMock } from '../../data/mocks/eventos';
 import EventsFeed from '../../components/tourist/EventsFeed';
 
-export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness, onSelectEvent }) {
+export default function Home({ currentZone, allComercios = comerciosMock, allEvents = eventosMock, onOpenZoneSelector, onSelectBusiness, onSelectEvent }) {
   const [activeSection, setActiveSection] = useState('beneficios'); // 'beneficios' | 'eventos'
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const activeEventsCount = allEvents.filter((e) => e.activo !== false).length;
 
   // Mapeo dinámico de íconos para categorías
   const getCategoryIcon = (iconName) => {
@@ -44,7 +46,9 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
   };
 
   // Filtrado reactivo por categoría y búsqueda inteligente por texto
-  const filteredComercios = comerciosMock.filter((comercio) => {
+  const filteredComercios = allComercios
+    .filter((c) => c.estado !== 'pausado')
+    .filter((comercio) => {
     const matchesCategory = !selectedCategory || comercio.categoriaId === selectedCategory;
 
     const query = searchQuery.trim().toLowerCase();
@@ -58,7 +62,8 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
     );
 
     return matchesCategory && matchesQuery;
-  });
+  })
+  .sort((a, b) => (b.esPremium ? 1 : 0) - (a.esPremium ? 1 : 0));
 
   return (
     <div className="w-full min-h-screen bg-[#0B0B0E] text-[#F5F5F7] pb-24 overflow-x-hidden">
@@ -117,7 +122,7 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
                 ? 'bg-[#0B0B0E]/30 text-[#0B0B0E]'
                 : 'bg-[#D4AF37]/20 text-[#F5D77F] border border-[#D4AF37]/40'
             }`}>
-              {eventosMock.length}
+              {activeEventsCount}
             </span>
           </button>
         </div>
@@ -126,14 +131,14 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
       {/* Contenido Principal Condicional: Beneficios vs Eventos */}
       {activeSection === 'beneficios' ? (
         <div className="px-5 pt-5 space-y-6 animate-fadeIn">
-        {/* Banner Hero Premium */}
+        {/* Banner Hero Principal */}
         <div className="relative rounded-3xl p-5 overflow-hidden bg-gradient-to-br from-[#1C1A14] via-[#141418] to-[#0E0E12] border border-gold-border shadow-gold-glow/20">
           <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#D4AF37]/15 rounded-full blur-2xl pointer-events-none" />
           
           <div className="relative z-10">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#F5D77F] text-[10px] font-bold tracking-widest uppercase mb-2">
               <Sparkles className="w-3 h-3 text-[#F5D77F]" />
-              MEMBRESÍA PREMIUM
+              GUÍA OFICIAL & BENEFICIOS
             </div>
             
             <h2 className="font-serif text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FAF6EE] via-[#E5C07B] to-[#D4AF37] leading-tight">
@@ -289,9 +294,11 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
                       alt={comercio.nombre}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-black text-[#F5D77F] border border-gold-500/30">
-                      {comercio.promocionPrincipal?.descuento || 'PROMO'}
-                    </div>
+                    {comercio.promocionPrincipal?.descuento && (
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-black text-[#F5D77F] border border-gold-500/30">
+                        {comercio.promocionPrincipal.descuento}
+                      </div>
+                    )}
                   </div>
 
                   {/* Información del Comercio */}
@@ -302,7 +309,7 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
                       </h4>
                       {comercio.esPremium && (
                         <span className="shrink-0 text-[9px] font-bold text-[#E5C07B] bg-[#D4AF37]/15 border border-[#D4AF37]/30 px-1.5 py-0.5 rounded">
-                          ★ PREMIUM
+                          ★ DESTACADO
                         </span>
                       )}
                     </div>
@@ -311,11 +318,17 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
                       {comercio.eslogan}
                     </p>
 
-                    {/* Beneficio Destacado */}
-                    <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#E5C07B] bg-[#D4AF37]/10 px-2 py-0.5 rounded-md">
-                      <Tag className="w-3 h-3 text-[#E5C07B]" />
-                      <span>{comercio.promocionPrincipal?.titulo}</span>
-                    </div>
+                    {/* Beneficio Destacado (si el local tiene promoción activa) */}
+                    {comercio.promocionPrincipal?.titulo ? (
+                      <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#E5C07B] bg-[#D4AF37]/10 px-2 py-0.5 rounded-md">
+                        <Tag className="w-3 h-3 text-[#E5C07B]" />
+                        <span>{comercio.promocionPrincipal.titulo}</span>
+                      </div>
+                    ) : (
+                      <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-400 bg-white/5 px-2 py-0.5 rounded-md">
+                        <span>Comercio Adherido</span>
+                      </div>
+                    )}
 
                     {/* Footer de la tarjeta: distancia y rating */}
                     <div className="flex items-center justify-between text-[11px] text-gray-400 mt-2.5 pt-2 border-t border-white/5">
@@ -340,6 +353,7 @@ export default function Home({ currentZone, onOpenZoneSelector, onSelectBusiness
       <div className="px-5 pt-5 pb-6 animate-fadeIn">
         <EventsFeed 
           currentZone={currentZone} 
+          allEvents={allEvents}
           onSelectEvent={onSelectEvent} 
         />
       </div>

@@ -93,16 +93,16 @@ export default function ProfileView({
           </div>
         </div>
 
-        {/* Badge de Membresía */}
+        {/* Badge de Pase Turístico */}
         <div className="p-2.5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/15 via-[#1A1710] to-[#141418] border border-[#D4AF37]/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#F5D77F]" />
             <span className="text-xs font-bold text-[#F5D77F] tracking-wide">
-              Membresía Premium Activa
+              Pase de Beneficios Activo
             </span>
           </div>
           <span className="text-[10px] text-gray-400 font-medium">
-            Pase 2026
+            Acceso 100% Gratuito
           </span>
         </div>
 

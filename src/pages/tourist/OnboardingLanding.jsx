@@ -63,7 +63,7 @@ export default function OnboardingLanding({ onStartExploring }) {
         </h2>
 
         <p className="font-sans text-xs tracking-wide text-[#E5C07B]/90 font-medium mt-2">
-          Tu guía premium de Villa Carlos Paz
+          Tu guía oficial de Villa Carlos Paz
         </p>
       </div>
 
